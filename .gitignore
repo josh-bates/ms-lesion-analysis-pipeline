@@ -1,0 +1,27 @@
+# --- Python ---------------------------------------------------------------
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# --- The dataset ----------------------------------------------------------
+# open_ms_data is a multi-GB external clone - it is NOT committed to this repo.
+# Reproduce it with:  git clone https://github.com/muschellij2/open_ms_data
+open_ms_data/
+
+# --- Generated pipeline outputs -------------------------------------------
+# Derived images, CSVs, figures, logs and model weights are reproducible from the
+# code + data, so we keep them out of version control (commit the code, not the
+# artefacts). The .csv reports are small enough that you *could* commit them for a
+# demo; left ignored here to keep the repo clean.
+derivatives/
+outputs/
+logs/
+models/
+scratch/
+*.pt
+
+# --- OS / editor cruft ----------------------------------------------------
+.DS_Store
+.idea/
+.vscode/

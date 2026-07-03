@@ -1,0 +1,29 @@
+# Python dependencies for the MS lesion analysis pipeline.
+# Installed into a virtual environment by setup.sh.
+#
+# Versions are left unpinned-but-recent for a teaching prototype so the project
+# installs cleanly on a fresh machine. For a production/reproducible pipeline you
+# would pin exact versions (e.g. with pip-tools) - noted here as the trade-off.
+
+# --- core scientific stack -------------------------------------------------
+numpy
+scipy
+pandas
+scikit-learn
+matplotlib
+
+# --- neuroimaging I/O and utilities ---------------------------------------
+nibabel            # read/write NIfTI (.nii.gz) files
+nilearn            # plotting + masking helpers for neuroimaging
+
+# --- deep learning (Stage 4: U-Net lesion segmentation) -------------------
+# NOTE: torch's CPU wheels live on a separate index. Install it FIRST, scoped to
+# that index, THEN monai from PyPI (monai is NOT on the torch index):
+#     pip install torch --index-url https://download.pytorch.org/whl/cpu
+#     pip install monai
+# setup.sh does exactly this. On a CUDA box, drop the --index-url for a GPU build.
+torch
+monai              # medical-imaging DL toolkit built on PyTorch (U-Net, transforms, Dice)
+
+# --- GUI (Stage 6) ---------------------------------------------------------
+gradio             # simple web UI for screen-sharing a single-scan demo
