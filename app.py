@@ -95,6 +95,35 @@ def _render_overlay(slice_img: np.ndarray, mask_slice: np.ndarray | None,
     return rgba[..., :3].copy()
 
 
+def _choose_display_slice(flair: np.ndarray, pred: np.ndarray, brain: np.ndarray | None) -> int:
+    """Choose a useful axial slice for display, ignoring near-empty edge slices."""
+    n_slices = flair.shape[2]
+    mid = n_slices // 2
+
+    # Resampling can leave tiny non-zero interpolation residue outside the real head.
+    # Use robust foreground support so a false-positive edge slice cannot dominate.
+    if brain is not None and brain.any():
+        support = brain.reshape(-1, n_slices).sum(axis=0)
+    else:
+        support = (np.abs(flair) > 1e-6).reshape(-1, n_slices).sum(axis=0)
+
+    max_support = int(support.max()) if support.size else 0
+    if max_support == 0:
+        return mid
+
+    valid = support >= max(25, 0.20 * max_support)
+    if pred.any():
+        per_slice = pred.reshape(-1, n_slices).sum(axis=0)
+        per_slice = np.where(valid, per_slice, -1)
+        if per_slice.max() > 0:
+            return int(np.argmax(per_slice))
+
+    valid_idx = np.flatnonzero(valid)
+    if valid_idx.size:
+        return int(valid_idx[np.argmin(np.abs(valid_idx - mid))])
+    return mid
+
+
 # ---------------------------------------------------------------------------
 # The core analysis (server-independent, testable)
 # ---------------------------------------------------------------------------
@@ -148,12 +177,8 @@ def analyze_scan(flair_path: str) -> dict:
         if payload is None:
             notes.append("No disability models found - run Stage 5 to enable EDSS/burden.")
 
-        # --- images: middle axial slice + overlay ---
-        mid = flair.shape[2] // 2
-        # pick the slice with the most predicted lesion if any, else the middle
-        if lesion_vox:
-            per_slice = pred.reshape(-1, pred.shape[2]).sum(axis=0)
-            mid = int(np.argmax(per_slice))
+        # --- images: representative axial slice + overlay ---
+        mid = _choose_display_slice(flair, pred, brain)
         slice_rgb = _render_overlay(flair[:, :, mid], None, brain[:, :, mid],
                                     f"FLAIR (axial slice {mid})")
         overlay_rgb = _render_overlay(flair[:, :, mid], pred[:, :, mid], brain[:, :, mid],
